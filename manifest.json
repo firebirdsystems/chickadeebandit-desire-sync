@@ -1,0 +1,34 @@
+{
+  "id": "desire-sync",
+  "name": "Desire Sync",
+  "version": "2.0.0",
+  "description": "A private, mutual way for partners to signal interest — only nudges both of you when your signals align.",
+  "entrypoint": "index.html",
+  "runtime": "static",
+  "category": "couple",
+  "tags": ["couples"],
+  "data_access": {
+    "reads": ["family.members"],
+    "writes": []
+  },
+  "permissions": {
+    "default_audience": "adults",
+    "requires_approval": false
+  },
+  "storage": "db",
+  "icon": "💫",
+  "nav": { "label": "Desire Sync" },
+  "row_policies": {
+    "partner_config": { "kind": "owner_only", "member_column": "member_id", "adults_bypass": false },
+    "signals": { "kind": "owner_only", "member_column": "member_id", "adults_bypass": false }
+  },
+  "mutual_signals": {
+    "signals_table": "signals",
+    "member_column": "member_id",
+    "expires_column": "expires_at",
+    "partner_table": "partner_config",
+    "partner_member_column": "member_id",
+    "partner_id_column": "partner_id",
+    "notify": { "title": "Desire Sync ✨", "body": "You're in sync — open the app." }
+  }
+}

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/run/desire-sync/" />
+  <title>Desire Sync</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--hub-font, system-ui, sans-serif);
+      font-size: var(--hub-font-size, 15px);
+      background: var(--hub-bg, #f9fafb);
+      color: var(--hub-text, #111827);
+      min-height: 100vh;
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── App header ── */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 0;
+    }
+    .app-header-left { display: flex; align-items: center; gap: 8px; }
+    .app-header .icon { font-size: 1.3rem; }
+    .app-header h1 { font-size: 1.25rem; font-weight: 700; }
+
+    /* ── Setup view ── */
+    .setup-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 20px;
+      min-height: 80vh;
+      justify-content: center;
+    }
+    .setup-card {
+      background: var(--hub-surface, #fff);
+      border: 1px solid var(--hub-border, #e5e7eb);
+      border-radius: var(--hub-radius, 8px);
+      padding: 32px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+    }
+    .setup-icon { font-size: 2.5rem; margin-bottom: 16px; }
+    .setup-card h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 6px; }
+    .setup-card .setup-desc { color: var(--hub-text-muted, #6b7280); font-size: 0.9rem; margin-bottom: 24px; }
+    .setup-card .pick-label { font-weight: 600; margin-bottom: 12px; text-align: left; display: block; }
+    .member-list { margin-bottom: 20px; }
+
+    .member-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--hub-border, #e5e7eb);
+      border-radius: var(--hub-radius, 6px);
+      cursor: pointer;
+      margin-bottom: 6px;
+      transition: border-color .15s, background .15s;
+      text-align: left;
+    }
+    .member-option input[type="radio"] { accent-color: var(--hub-primary, #6366f1); }
+    .member-option:has(input:checked) {
+      border-color: var(--hub-primary, #6366f1);
+      background: color-mix(in srgb, var(--hub-primary, #6366f1) 6%, transparent);
+    }
+    .member-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .member-name { font-weight: 500; font-size: 0.95rem; }
+
+    /* ── Main content ── */
+    .content { padding: 12px 20px 20px; max-width: 600px; }
+
+    .partner-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      color: var(--hub-text-muted, #6b7280);
+      font-size: 0.85rem;
+    }
+    .partner-bar .partner-avatar { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .partner-bar .partner-name { font-weight: 600; color: var(--hub-text, #111827); }
+
+    /* ── Signal card ── */
+    .signal-card {
+      background: var(--hub-surface, #fff);
+      border: 1px solid var(--hub-border, #e5e7eb);
+      border-radius: var(--hub-radius, 8px);
+      padding: 40px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 18px;
+    }
+    .signal-status { font-size: 0.95rem; color: var(--hub-text-muted, #6b7280); }
+    .signal-status strong { color: var(--hub-text, #111827); }
+
+    .signal-toggle {
+      width: 140px; height: 140px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      font-size: 2.6rem;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--hub-bg, #f9fafb);
+      border: 2px solid var(--hub-border, #e5e7eb);
+      color: var(--hub-text, #111827);
+      transition: transform .15s, border-color .15s, background .15s, opacity .15s;
+    }
+    .signal-toggle:hover:not(:disabled) { transform: scale(1.04); }
+    .signal-toggle:disabled { opacity: .6; cursor: not-allowed; }
+    .signal-toggle.active {
+      background: color-mix(in srgb, var(--hub-primary, #6366f1) 14%, var(--hub-surface, #fff));
+      border-color: var(--hub-primary, #6366f1);
+    }
+
+    .signal-hint { font-size: 0.85rem; color: var(--hub-text-muted, #6b7280); max-width: 360px; line-height: 1.5; }
+
+    /* ── Match reveal ── */
+    .reveal-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .reveal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+    .reveal-desc { font-size: 0.9rem; color: var(--hub-text-muted, #6b7280); line-height: 1.5; }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      background: var(--hub-primary, #6366f1);
+      color: var(--hub-primary-fg, #fff);
+      border: none;
+      border-radius: var(--hub-radius, 6px);
+      padding: 10px 20px;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer;
+      transition: opacity .15s;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-primary:hover:not(:disabled) { opacity: .85; }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-secondary {
+      background: transparent; color: var(--hub-text, #111827);
+      border: 1px solid var(--hub-border, #e5e7eb);
+      border-radius: var(--hub-radius, 6px);
+      padding: 10px 20px; font-size: 0.95rem; font-weight: 500; cursor: pointer;
+    }
+    .btn-secondary:hover { background: var(--hub-bg, #f9fafb); }
+    .btn-icon {
+      background: transparent; border: none; cursor: pointer;
+      color: var(--hub-text-muted, #6b7280);
+      padding: 6px; border-radius: var(--hub-radius, 4px);
+      font-size: 1rem; line-height: 1;
+    }
+    .btn-icon:hover { color: var(--hub-text, #111827); background: var(--hub-bg, #f9fafb); }
+
+    /* ── Modal ── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; padding: 20px;
+    }
+    .modal {
+      background: var(--hub-surface, #fff);
+      border-radius: var(--hub-radius, 8px);
+      padding: 28px 24px; width: 100%; max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.18);
+      text-align: center;
+    }
+    .modal-actions { display: flex; gap: 8px; justify-content: center; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Setup view ── -->
+  <div id="view-setup" class="view">
+    <div class="setup-wrap">
+      <div class="setup-card">
+        <div class="setup-icon">💫</div>
+        <h2>Desire Sync</h2>
+        <p class="setup-desc">A private, mutual way to let your partner know you're in the mood — without the awkwardness of asking first. Neither of you sees the other's signal unless you're both feeling it.</p>
+        <span class="pick-label">Who is your partner?</span>
+        <div id="setup-members" class="member-list"></div>
+        <button class="btn-primary" style="width:100%;justify-content:center" onclick="savePartner()">Get Started</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main view ── -->
+  <div id="view-main" class="view">
+    <div class="app-header">
+      <div class="app-header-left">
+        <span class="icon">💫</span>
+        <h1>Desire Sync</h1>
+      </div>
+      <button class="btn-icon" title="Change partner" onclick="showSetup()">⚙️</button>
+    </div>
+    <div class="content">
+      <div id="partner-bar" class="partner-bar"></div>
+      <div class="signal-card">
+        <div id="signal-status" class="signal-status"></div>
+        <button id="signal-toggle" class="signal-toggle" onclick="toggleSignal()"></button>
+        <p id="signal-hint" class="signal-hint"></p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { esc, initial, memberColor } from "/hub-sdk.js";
+    import { SIGNAL_WINDOW_HOURS, computeExpiry, isSignalActive, remainingMinutes } from "./logic.js";
+
+    const CONTEXT = window.__CONTEXT_URL ?? "";
+    const DB      = window.__DB_URL      ?? "";
+    const ME      = window.__CURRENT_MEMBER ?? null;
+    const APP_ID  = window.__APP_ID ?? "desire-sync";
+
+    let members   = [];
+    let partner   = null;
+    let mySignal  = null; // { expiresAt: ISOString } | null
+    let modalEl   = null;
+    let tickTimer = null;
+
+    // ── DB helper ─────────────────────────────────────────────────────────────
+    async function db(sql, params = []) {
+      if (!DB) return { rows: [] };
+      const res = await fetch(DB, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sql, params }),
+      });
+      return res.json();
+    }
+
+    // ── Signal endpoint ───────────────────────────────────────────────────────
+    // The server evaluates the mutual match (the partner's raw signal is never sent
+    // here) and, on a match, clears both signals and notifies both partners.
+    async function postSignal(payload) {
+      if (!DB) return { match: false, active: !!payload.active }; // demo mode
+      const res = await fetch(`/run/${APP_ID}/api/signal`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        let msg = `signal failed (${res.status})`;
+        try { msg = (await res.json()).error ?? msg; } catch {}
+        throw new Error(msg);
+      }
+      return res.json();
+    }
+
+    // ── Data loading ──────────────────────────────────────────────────────────
+    async function loadMembers() {
+      if (!CONTEXT) {
+        members = [
+          { id: "demo-1", name: "Alex",   role: "adult" },
+          { id: "demo-2", name: "Jordan", role: "adult" },
+          { id: "demo-3", name: "Sam",    role: "adult" },
+        ];
+        return;
+      }
+      try {
+        const res = await fetch(`${CONTEXT}?keys=family.members`);
+        members = ((await res.json())["family.members"]) ?? [];
+      } catch { members = []; }
+    }
+
+    async function loadPartnerFromDb() {
+      if (!ME) return null;
+      const { rows } = await db(
+        "SELECT partner_id FROM app_desire_sync__partner_config WHERE member_id = ?",
+        [ME.id]
+      );
+      return rows.length ? rows[0].partner_id : null;
+    }
+
+    // Loads (and tidies up) only MY OWN signal — never the partner's.
+    async function loadMySignal() {
+      if (!ME) { mySignal = null; return; }
+      const { rows } = await db("SELECT expires_at FROM app_desire_sync__signals WHERE member_id = ?", [ME.id]);
+      const expiresAt = rows.length ? rows[0].expires_at : null;
+      if (expiresAt && isSignalActive(expiresAt)) {
+        mySignal = { expiresAt };
+      } else {
+        mySignal = null;
+        if (expiresAt) await db("DELETE FROM app_desire_sync__signals WHERE member_id = ?", [ME.id]).catch(() => {});
+      }
+    }
+
+    // ── Partner save ──────────────────────────────────────────────────────────
+    window.savePartner = async function() {
+      const sel = document.querySelector('#setup-members input[type="radio"]:checked');
+      if (!sel) return;
+      const partnerId = sel.value;
+
+      const btn = document.querySelector('#view-setup .btn-primary');
+      if (btn) { btn.disabled = true; btn.textContent = "Saving…"; }
+
+      try {
+        if (ME) {
+          await db(
+            `INSERT INTO app_desire_sync__partner_config (member_id, partner_id) VALUES (?, ?)
+             ON CONFLICT (member_id) DO UPDATE SET partner_id = EXCLUDED.partner_id`,
+            [ME.id, partnerId]
+          );
+        }
+        partner = members.find(m => m.id === partnerId) ?? null;
+        showMain();
+        loadMySignal().then(render);
+      } catch(e) {
+        if (btn) { btn.disabled = false; btn.textContent = "Get Started"; }
+        throw e;
+      }
+    };
+
+    // ── Modal helpers ─────────────────────────────────────────────────────────
+    function openModal(html) {
+      closeModal();
+      modalEl = document.createElement("div");
+      modalEl.className = "modal-backdrop";
+      modalEl.innerHTML = `<div class="modal">${html}</div>`;
+      modalEl.addEventListener("click", e => { if (e.target === modalEl) closeModal(); });
+      document.body.appendChild(modalEl);
+    }
+    function closeModal() { modalEl?.remove(); modalEl = null; }
+    window.closeModal = closeModal;
+
+    function showMatchReveal() {
+      openModal(`
+        <div class="reveal-icon">💫</div>
+        <div class="reveal-title">You're in sync</div>
+        <p class="reveal-desc">${esc(partner?.name ?? "Your partner")} is feeling it too — the moment is mutual. Both signals have been cleared, so go enjoy it 😉</p>
+        <div class="modal-actions">
+          <button class="btn-primary" onclick="closeModal()">Got it</button>
+        </div>
+      `);
+    }
+
+    // ── Signal toggle ─────────────────────────────────────────────────────────
+    window.toggleSignal = async function() {
+      if (!ME || !partner) return;
+      const btn = document.getElementById("signal-toggle");
+      btn.disabled = true;
+
+      try {
+        if (mySignal && isSignalActive(mySignal.expiresAt)) {
+          // Withdraw — cancel my own active signal (server deletes only my row).
+          await postSignal({ active: false });
+          mySignal = null;
+          render();
+        } else {
+          // Activate — the server records MY signal and privately evaluates the
+          // mutual match; it returns only whether we're in sync, never my partner's
+          // raw state. On a match it has already cleared both signals + notified both.
+          const expiresAt = computeExpiry();
+          const result = await postSignal({ active: true, expires_at: expiresAt });
+          if (result.match) {
+            mySignal = null;
+            render();
+            showMatchReveal();
+          } else {
+            mySignal = { expiresAt };
+            render();
+          }
+        }
+      } catch (e) {
+        alert(e.message ?? "Something went wrong");
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    // ── Views ─────────────────────────────────────────────────────────────────
+    window.showSetup = function() {
+      const otherAdults = members.filter(m => m.role === "adult" && m.id !== (ME?.id ?? "demo-1"));
+      const listEl = document.getElementById("setup-members");
+      listEl.innerHTML = otherAdults.map(m => {
+        const color = memberColor(m.id, members);
+        return `
+          <label class="member-option">
+            <input type="radio" name="partner" value="${esc(m.id)}" />
+            <span class="member-avatar" style="background:${color}">${esc(initial(m.name))}</span>
+            <span class="member-name">${esc(m.name)}</span>
+          </label>`;
+      }).join("");
+      if (partner) {
+        const radio = listEl.querySelector(`input[value="${CSS.escape(partner.id)}"]`);
+        if (radio) radio.checked = true;
+      }
+      document.getElementById("view-setup").classList.add("active");
+      document.getElementById("view-main").classList.remove("active");
+      stopTicking();
+    };
+
+    function showMain() {
+      document.getElementById("view-setup").classList.remove("active");
+      document.getElementById("view-main").classList.add("active");
+      render();
+      startTicking();
+    }
+
+    function startTicking() {
+      stopTicking();
+      tickTimer = setInterval(() => {
+        if (mySignal && !isSignalActive(mySignal.expiresAt)) mySignal = null;
+        render();
+      }, 60_000);
+    }
+    function stopTicking() {
+      if (tickTimer) clearInterval(tickTimer);
+      tickTimer = null;
+    }
+
+    function render() {
+      const partnerBarEl = document.getElementById("partner-bar");
+      if (partner) {
+        const color = memberColor(partner.id, members);
+        partnerBarEl.innerHTML = `
+          <span class="partner-avatar" style="background:${color}">${esc(initial(partner.name))}</span>
+          Synced with <span class="partner-name">${esc(partner.name)}</span>`;
+      } else {
+        partnerBarEl.innerHTML = "";
+      }
+
+      const active   = !!mySignal && isSignalActive(mySignal.expiresAt);
+      const statusEl = document.getElementById("signal-status");
+      const toggleEl = document.getElementById("signal-toggle");
+      const hintEl   = document.getElementById("signal-hint");
+
+      if (active) {
+        const mins = remainingMinutes(mySignal.expiresAt);
+        const label = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
+        statusEl.innerHTML = `Your signal is <strong>active</strong> — clears in ${esc(label)}`;
+        toggleEl.textContent = "💫";
+        toggleEl.classList.add("active");
+        toggleEl.title = "Cancel signal";
+        hintEl.textContent = `${partner?.name ?? "Your partner"} won't see this unless their signal lines up with yours too. Tap again to withdraw it.`;
+      } else {
+        statusEl.innerHTML = `No active signal`;
+        toggleEl.textContent = "🤍";
+        toggleEl.classList.remove("active");
+        toggleEl.title = "Send a private signal";
+        hintEl.textContent = `Tap to privately let ${partner?.name ?? "your partner"} know you're interested. You'll only be nudged — together — if you're both feeling it within the same ${SIGNAL_WINDOW_HOURS}-hour window.`;
+      }
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    (async () => {
+      const [, partnerId] = await Promise.all([loadMembers(), loadPartnerFromDb()]);
+      partner = partnerId ? (members.find(m => m.id === partnerId) ?? null) : null;
+      if (!partner) {
+        window.showSetup();
+      } else {
+        await loadMySignal();
+        showMain();
+      }
+    })();
+  </script>
+</body>
+</html>
