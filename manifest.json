@@ -18,9 +18,16 @@
   "storage": "db",
   "icon": "💫",
   "nav": { "label": "Desire Sync" },
+  "partner_link": {
+    "table": "partner_config",
+    "member_column": "member_id",
+    "partner_id_column": "partner_id",
+    "session_id_column": "session_id",
+    "require_role": "adult"
+  },
   "row_policies": {
-    "partner_config": { "kind": "owner_only", "member_column": "member_id", "adults_bypass": false },
-    "signals": { "kind": "owner_only", "member_column": "member_id", "adults_bypass": false }
+    "partner_config": { "kind": "owner_only", "member_column": "member_id", "adults_bypass": false, "endpoint_writes_only": true },
+    "signals": { "kind": "owner_only", "member_column": "member_id", "adults_bypass": false, "endpoint_writes_only": true }
   },
   "mutual_signals": {
     "signals_table": "signals",
@@ -29,6 +36,9 @@
     "partner_table": "partner_config",
     "partner_member_column": "member_id",
     "partner_id_column": "partner_id",
+    "partner_session_id_column": "session_id",
+    "signal_session_id_column": "session_id",
+    "require_reciprocal": true,
     "notify": { "title": "Desire Sync ✨", "body": "You're in sync — open the app." }
   }
 }

@@ -224,6 +224,8 @@
 
     let members   = [];
     let partner   = null;
+    let partnerReciprocal = false;
+    let partnerSessionId = null;
     let mySignal  = null; // { expiresAt: ISOString } | null
     let modalEl   = null;
     let tickTimer = null;
@@ -275,23 +277,26 @@
 
     async function loadPartnerFromDb() {
       if (!ME) return null;
-      const { rows } = await db(
-        "SELECT partner_id FROM app_desire_sync__partner_config WHERE member_id = ?",
-        [ME.id]
-      );
-      return rows.length ? rows[0].partner_id : null;
+      const res = await fetch(`/run/${APP_ID}/api/partner`);
+      const status = res.ok ? await res.json() : { partner_id: null, reciprocal: false };
+      partnerReciprocal = status.reciprocal;
+      partnerSessionId = status.session_id ?? null;
+      return status.partner_id;
     }
 
     // Loads (and tidies up) only MY OWN signal — never the partner's.
     async function loadMySignal() {
-      if (!ME) { mySignal = null; return; }
-      const { rows } = await db("SELECT expires_at FROM app_desire_sync__signals WHERE member_id = ?", [ME.id]);
+      if (!ME || !partnerSessionId) { mySignal = null; return; }
+      const { rows } = await db(
+        "SELECT expires_at FROM app_desire_sync__signals WHERE member_id = ? AND session_id = ?",
+        [ME.id, partnerSessionId]
+      );
       const expiresAt = rows.length ? rows[0].expires_at : null;
       if (expiresAt && isSignalActive(expiresAt)) {
         mySignal = { expiresAt };
       } else {
         mySignal = null;
-        if (expiresAt) await db("DELETE FROM app_desire_sync__signals WHERE member_id = ?", [ME.id]).catch(() => {});
+        if (expiresAt) await postSignal({ active: false }).catch(() => {});
       }
     }
 
@@ -305,14 +310,21 @@
       if (btn) { btn.disabled = true; btn.textContent = "Saving…"; }
 
       try {
-        if (ME) {
-          await db(
-            `INSERT INTO app_desire_sync__partner_config (member_id, partner_id) VALUES (?, ?)
-             ON CONFLICT (member_id) DO UPDATE SET partner_id = EXCLUDED.partner_id`,
-            [ME.id, partnerId]
-          );
-        }
+        const res = ME ? await fetch(`/run/${APP_ID}/api/partner`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ partner_id: partnerId }),
+        }) : null;
+        if (res && !res.ok) throw new Error((await res.json()).error ?? "Could not save partner");
+        const status = res ? await res.json() : { reciprocal: true };
+        partnerReciprocal = status.reciprocal;
+        partnerSessionId = status.session_id ?? null;
         partner = members.find(m => m.id === partnerId) ?? null;
+        if (!partnerReciprocal) {
+          alert(`Waiting for ${partner?.name ?? "your partner"} to choose you too.`);
+          if (btn) { btn.disabled = false; btn.textContent = "Check Again"; }
+          window.showSetup();
+          return;
+        }
         showMain();
         loadMySignal().then(render);
       } catch(e) {
@@ -456,7 +468,7 @@
     (async () => {
       const [, partnerId] = await Promise.all([loadMembers(), loadPartnerFromDb()]);
       partner = partnerId ? (members.find(m => m.id === partnerId) ?? null) : null;
-      if (!partner) {
+      if (!partner || !partnerReciprocal) {
         window.showSetup();
       } else {
         await loadMySignal();
