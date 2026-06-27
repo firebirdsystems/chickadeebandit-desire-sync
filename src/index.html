@@ -214,7 +214,7 @@
   </div>
 
   <script type="module">
-    import { esc, initial, memberColor } from "/hub-sdk.js";
+    import { hubAlert, esc, initial, memberColor } from "/hub-sdk.js";
     import { SIGNAL_WINDOW_HOURS, computeExpiry, isSignalActive, remainingMinutes } from "./logic.js";
 
     const CONTEXT = window.__CONTEXT_URL ?? "";
@@ -320,9 +320,9 @@
         partnerSessionId = status.session_id ?? null;
         partner = members.find(m => m.id === partnerId) ?? null;
         if (!partnerReciprocal) {
-          alert(`Waiting for ${partner?.name ?? "your partner"} to choose you too.`);
           if (btn) { btn.disabled = false; btn.textContent = "Check Again"; }
           window.showSetup();
+          showWaitingForPartner();
           return;
         }
         showMain();
@@ -344,6 +344,20 @@
     }
     function closeModal() { modalEl?.remove(); modalEl = null; }
     window.closeModal = closeModal;
+
+    function showWaitingForPartner() {
+      const name = esc(partner?.name ?? "your partner");
+      openModal(`
+        <div class="reveal-icon">⏳</div>
+        <div class="reveal-title">Waiting for ${name}</div>
+        <p class="reveal-desc">You've chosen ${name}. As soon as they choose you back, you'll be in sync.</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="closeModal()">Close</button>
+          <button class="btn-primary" onclick="closeModal(); savePartner()">Check Again</button>
+        </div>
+      `);
+    }
+    window.showWaitingForPartner = showWaitingForPartner;
 
     function showMatchReveal() {
       openModal(`
@@ -384,7 +398,7 @@
           }
         }
       } catch (e) {
-        alert(e.message ?? "Something went wrong");
+        hubAlert(e.message ?? "Something went wrong");
       } finally {
         btn.disabled = false;
       }
