@@ -238,7 +238,9 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sql, params }),
       });
-      return res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? `db failed (${res.status})`);
+      return data;
     }
 
     // ── Signal endpoint ───────────────────────────────────────────────────────
@@ -287,7 +289,7 @@
     // Loads (and tidies up) only MY OWN signal — never the partner's.
     async function loadMySignal() {
       if (!ME || !partnerSessionId) { mySignal = null; return; }
-      const { rows } = await db(
+      const { rows = [] } = await db(
         "SELECT expires_at FROM app_desire_sync__signals WHERE member_id = ? AND session_id = ?",
         [ME.id, partnerSessionId]
       );
@@ -326,10 +328,10 @@
           return;
         }
         showMain();
-        loadMySignal().then(render);
+        loadMySignal().catch(() => { mySignal = null; }).then(render);
       } catch(e) {
         if (btn) { btn.disabled = false; btn.textContent = "Get Started"; }
-        throw e;
+        hubAlert(e.message ?? "Could not save partner");
       }
     };
 
@@ -393,7 +395,8 @@
             render();
             showMatchReveal();
           } else {
-            mySignal = { expiresAt };
+            // The server may clamp the expiry to the app's max window.
+            mySignal = { expiresAt: result.expires_at ?? expiresAt };
             render();
           }
         }
@@ -485,7 +488,7 @@
       if (!partner || !partnerReciprocal) {
         window.showSetup();
       } else {
-        await loadMySignal();
+        await loadMySignal().catch(() => { mySignal = null; });
         showMain();
       }
     })();

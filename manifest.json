@@ -1,7 +1,7 @@
 {
   "id": "desire-sync",
   "name": "Desire Sync",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A private, mutual way for partners to signal interest — only nudges both of you when your signals align.",
   "entrypoint": "index.html",
   "runtime": "static",
@@ -39,6 +39,7 @@
     "partner_session_id_column": "session_id",
     "signal_session_id_column": "session_id",
     "require_reciprocal": true,
+    "max_window_hours": 3,
     "notify": { "title": "Desire Sync ✨", "body": "You're in sync — open the app." }
   }
 }
