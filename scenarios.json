@@ -1,0 +1,44 @@
+{
+  "scenarios": [
+    {
+      "name": "signals are private even from the reciprocal partner; direct writes are endpoint-only",
+      "members": { "a": "adult", "b": "adult" },
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_desire_sync__partner_config (member_id, partner_id, session_id) VALUES (?, ?, ?)",
+          "params": ["{{a}}", "{{b}}", "sess-ab"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_desire_sync__partner_config (member_id, partner_id, session_id) VALUES (?, ?, ?)",
+          "params": ["{{b}}", "{{a}}", "sess-ab"]
+        },
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_desire_sync__signals (member_id, expires_at, session_id) VALUES (?, ?, ?)",
+          "params": ["{{a}}", "2099-01-01T00:00:00Z", "sess-ab"]
+        },
+        {
+          "action": "db",
+          "as": "a",
+          "sql": "SELECT member_id FROM app_desire_sync__signals",
+          "expect": { "status": 200, "rowCount": 1 }
+        },
+        {
+          "action": "db",
+          "as": "b",
+          "sql": "SELECT member_id FROM app_desire_sync__signals",
+          "expect": { "status": 200, "rowCount": 0 }
+        },
+        {
+          "action": "db",
+          "as": "b",
+          "sql": "INSERT INTO app_desire_sync__signals (member_id, expires_at, session_id) VALUES (?, ?, ?)",
+          "params": ["{{b}}", "2099-01-01T00:00:00Z", "sess-ab"],
+          "expect": { "status": 403, "errorIncludes": "endpoint" }
+        }
+      ]
+    }
+  ]
+}
