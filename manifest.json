@@ -1,14 +1,18 @@
 {
   "id": "desire-sync",
   "name": "Desire Sync",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "A private, mutual way for partners to signal interest — only nudges both of you when your signals align.",
   "entrypoint": "index.html",
   "runtime": "static",
   "category": "couple",
-  "tags": ["couples"],
+  "tags": [
+    "couples"
+  ],
   "data_access": {
-    "reads": ["family.members"],
+    "reads": [
+      "family.members"
+    ],
     "writes": []
   },
   "permissions": {
@@ -17,7 +21,9 @@
   },
   "storage": "db",
   "icon": "💫",
-  "nav": { "label": "Desire Sync" },
+  "nav": {
+    "label": "Desire Sync"
+  },
   "partner_link": {
     "table": "partner_config",
     "member_column": "member_id",
@@ -26,8 +32,18 @@
     "require_role": "adult"
   },
   "row_policies": {
-    "partner_config": { "kind": "owner_only", "member_column": "member_id", "adults_bypass": false, "endpoint_writes_only": true },
-    "signals": { "kind": "owner_only", "member_column": "member_id", "adults_bypass": false, "endpoint_writes_only": true }
+    "partner_config": {
+      "kind": "owner_only",
+      "member_column": "member_id",
+      "adults_bypass": false,
+      "endpoint_writes_only": true
+    },
+    "signals": {
+      "kind": "owner_only",
+      "member_column": "member_id",
+      "adults_bypass": false,
+      "endpoint_writes_only": true
+    }
   },
   "mutual_signals": {
     "signals_table": "signals",
@@ -40,6 +56,10 @@
     "signal_session_id_column": "session_id",
     "require_reciprocal": true,
     "max_window_hours": 3,
-    "notify": { "title": "Desire Sync ✨", "body": "You're in sync — open the app." }
-  }
+    "notify": {
+      "title": "Desire Sync ✨",
+      "body": "You're in sync — open the app."
+    }
+  },
+  "kiosk": "never"
 }
