@@ -1,5 +1,6 @@
 {
   "id": "desire-sync",
+  "contexts": ["household", "shared_space"],
   "name": "Desire Sync",
   "version": "2.0.2",
   "description": "A private, mutual way for partners to signal interest — only nudges both of you when your signals align.",
