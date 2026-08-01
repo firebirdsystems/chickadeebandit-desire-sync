@@ -32,6 +32,13 @@
     "session_id_column": "session_id",
     "require_role": "adult"
   },
+  "member_references": {
+    "partner_config": [
+      { "column": "member_id", "on_removed": "delete", "id_column": "rowid" },
+      { "column": "partner_id", "on_removed": "delete", "id_column": "rowid" }
+    ],
+    "signals": { "column": "member_id", "on_removed": "delete", "id_column": "rowid" }
+  },
   "row_policies": {
     "partner_config": {
       "kind": "owner_only",
