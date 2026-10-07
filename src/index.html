@@ -48,7 +48,7 @@
       width: 100%;
       text-align: center;
     }
-    .setup-icon { font-size: 2.5rem; margin-bottom: 16px; }
+    .setup-icon { margin-bottom: 16px; }
     .setup-card h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 6px; }
     .setup-card .setup-desc { color: var(--hub-text-muted, #6b7280); font-size: 0.9rem; margin-bottom: 24px; }
     .setup-card .pick-label { font-weight: 600; margin-bottom: 12px; text-align: left; display: block; }
@@ -129,7 +129,7 @@
     .signal-hint { font-size: 0.85rem; color: var(--hub-text-muted, #6b7280); max-width: 360px; line-height: 1.5; }
 
     /* ── Match reveal ── */
-    .reveal-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .reveal-icon { margin-bottom: 12px; }
     .reveal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
     .reveal-desc { font-size: 0.9rem; color: var(--hub-text-muted, #6b7280); line-height: 1.5; }
 
@@ -184,7 +184,7 @@
   <div id="view-setup" class="view">
     <div class="setup-wrap">
       <div class="setup-card">
-        <div class="setup-icon">💫</div>
+        <div class="setup-icon" id="setup-glyph"></div>
         <h2>Desire Sync</h2>
         <p class="setup-desc">A private, mutual way to let your partner know you're in the mood — without the awkwardness of asking first. Neither of you sees the other's signal unless you're both feeling it.</p>
         <span class="pick-label">Who is your partner?</span>
@@ -198,10 +198,10 @@
   <div id="view-main" class="view">
     <div class="app-header">
       <div class="app-header-left">
-        <span class="icon">💫</span>
+        <span class="icon" id="header-glyph"></span>
         <h1>Desire Sync</h1>
       </div>
-      <button class="btn-icon" title="Change partner" onclick="showSetup()">⚙️</button>
+      <button class="btn-icon" id="partner-btn" title="Change partner" aria-label="Change partner" onclick="showSetup()"></button>
     </div>
     <div class="content">
       <div id="partner-bar" class="partner-bar"></div>
@@ -214,8 +214,13 @@
   </div>
 
   <script type="module">
-    import { hubAlert, esc, initial, memberColor } from "/hub-sdk.js";
+    import { hubAlert, esc, initial, memberColor, glyph, chickadee } from "/hub-sdk.js";
     import { SIGNAL_WINDOW_HOURS, computeExpiry, isSignalActive, remainingMinutes } from "./logic.js";
+
+    // Static markup cannot call the SDK helpers; fill these marks from script.
+    document.getElementById("setup-glyph").innerHTML = chickadee("pair");
+    document.getElementById("header-glyph").innerHTML = glyph("two-hearts");
+    document.getElementById("partner-btn").innerHTML = glyph("gear");
 
     const CONTEXT = window.__CONTEXT_URL ?? "";
     const DB      = window.__DB_URL      ?? "";
@@ -350,7 +355,7 @@
     function showWaitingForPartner() {
       const name = esc(partner?.name ?? "your partner");
       openModal(`
-        <div class="reveal-icon">⏳</div>
+        <div class="reveal-icon">${chickadee("waiting")}</div>
         <div class="reveal-title">Waiting for ${name}</div>
         <p class="reveal-desc">You've chosen ${name}. As soon as they choose you back, you'll be in sync.</p>
         <div class="modal-actions">
@@ -363,7 +368,7 @@
 
     function showMatchReveal() {
       openModal(`
-        <div class="reveal-icon">💫</div>
+        <div class="reveal-icon">${chickadee("celebrating")}</div>
         <div class="reveal-title">You're in sync</div>
         <p class="reveal-desc">${esc(partner?.name ?? "Your partner")} is feeling it too — the moment is mutual. Both signals have been cleared, so go enjoy it 😉</p>
         <div class="modal-actions">
@@ -468,13 +473,13 @@
         const mins = remainingMinutes(mySignal.expiresAt);
         const label = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
         statusEl.innerHTML = `Your signal is <strong>active</strong> — clears in ${esc(label)}`;
-        toggleEl.textContent = "💫";
+        toggleEl.innerHTML = glyph("two-hearts");
         toggleEl.classList.add("active");
         toggleEl.title = "Cancel signal";
         hintEl.textContent = `${partner?.name ?? "Your partner"} won't see this unless their signal lines up with yours too. Tap again to withdraw it.`;
       } else {
         statusEl.innerHTML = `No active signal`;
-        toggleEl.textContent = "🤍";
+        toggleEl.innerHTML = glyph("heart");
         toggleEl.classList.remove("active");
         toggleEl.title = "Send a private signal";
         hintEl.textContent = `Tap to privately let ${partner?.name ?? "your partner"} know you're interested. You'll only be nudged — together — if you're both feeling it within the same ${SIGNAL_WINDOW_HOURS}-hour window.`;
