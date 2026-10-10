@@ -1,0 +1,27 @@
+{
+  "seed": [
+    {
+      "sql": "INSERT INTO app_desire_sync__partner_config (member_id, partner_id, session_id) VALUES (?, ?, ?)",
+      "params": [
+        "{{me}}",
+        "{{partner}}",
+        "perf-session-1"
+      ]
+    },
+    {
+      "sql": "INSERT INTO app_desire_sync__partner_config (member_id, partner_id, session_id) VALUES (?, ?, ?)",
+      "params": [
+        "{{partner}}",
+        "{{me}}",
+        "perf-session-1"
+      ]
+    },
+    {
+      "sql": "INSERT INTO app_desire_sync__signals (member_id, expires_at, session_id) VALUES (?, datetime('now','+6 hours'), ?)",
+      "params": [
+        "{{partner}}",
+        "perf-session-1"
+      ]
+    }
+  ]
+}

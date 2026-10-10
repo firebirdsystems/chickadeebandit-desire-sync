@@ -292,13 +292,19 @@
     }
 
     // Loads (and tidies up) only MY OWN signal — never the partner's.
-    async function loadMySignal() {
+    //
+    // The read names only the member, not the pairing session, so it does not
+    // have to wait for the partner request and can come with the document; a
+    // signal left over from an earlier session is set aside here instead.
+    function readMySignal() {
+      if (!ME) return Promise.resolve({ rows: [] });
+      return db("SELECT expires_at, session_id FROM app_desire_sync__signals WHERE member_id = ?", [ME.id]);
+    }
+    async function loadMySignal(read = readMySignal()) {
+      const { rows = [] } = await read;
       if (!ME || !partnerSessionId) { mySignal = null; return; }
-      const { rows = [] } = await db(
-        "SELECT expires_at FROM app_desire_sync__signals WHERE member_id = ? AND session_id = ?",
-        [ME.id, partnerSessionId]
-      );
-      const expiresAt = rows.length ? rows[0].expires_at : null;
+      const row = rows.find(r => r.session_id === partnerSessionId);
+      const expiresAt = row ? row.expires_at : null;
       if (expiresAt && isSignalActive(expiresAt)) {
         mySignal = { expiresAt };
       } else {
@@ -488,12 +494,14 @@
 
     // ── Init ──────────────────────────────────────────────────────────────────
     (async () => {
+      const signalRead = readMySignal();
+      signalRead.catch(() => {});
       const [, partnerId] = await Promise.all([loadMembers(), loadPartnerFromDb()]);
       partner = partnerId ? (members.find(m => m.id === partnerId) ?? null) : null;
       if (!partner || !partnerReciprocal) {
         window.showSetup();
       } else {
-        await loadMySignal().catch(() => { mySignal = null; });
+        await loadMySignal(signalRead).catch(() => { mySignal = null; });
         showMain();
       }
     })();
