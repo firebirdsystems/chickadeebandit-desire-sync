@@ -350,7 +350,8 @@
         loadMySignal().catch(() => { mySignal = null; }).then(render);
       } catch(e) {
         if (btn) { btn.disabled = false; btn.textContent = "Get Started"; }
-        hubAlert(e.message ?? "Could not save partner");
+        console.error(e);
+        hubAlert("Couldn’t save your partner — try again.");
       }
     };
 
@@ -420,7 +421,8 @@
           }
         }
       } catch (e) {
-        hubAlert(e.message ?? "Something went wrong");
+        console.error(e);
+        hubAlert("Couldn’t update your signal — try again.");
       } finally {
         btn.disabled = false;
       }
