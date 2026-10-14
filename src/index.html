@@ -217,7 +217,7 @@
 
   <script type="module">
     import { hubAlert, esc, initial, memberColor, glyph, chickadee } from "/hub-sdk.js";
-    import { SIGNAL_WINDOW_HOURS, computeExpiry, isSignalActive, remainingMinutes } from "./logic.js";
+    import { SIGNAL_WINDOW_HOURS, computeExpiry, isSignalActive, remainingMinutes, failureLine, pairedFailureLine } from "./logic.js";
 
     // Static markup cannot call the SDK helpers; fill these marks from script.
     document.getElementById("setup-glyph").innerHTML = chickadee("pair");
@@ -261,9 +261,10 @@
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
+        // The status picks the line shown; the hub's text stays in the console.
         let msg = `signal failed (${res.status})`;
         try { msg = (await res.json()).error ?? msg; } catch {}
-        throw new Error(msg);
+        throw Object.assign(new Error(msg), { status: res.status });
       }
       return res.json();
     }
@@ -335,7 +336,7 @@
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ partner_id: partnerId }),
         }) : null;
-        if (res && !res.ok) throw new Error((await res.json()).error ?? "Could not save partner");
+        if (res && !res.ok) throw Object.assign(new Error((await res.json().catch(() => ({}))).error ?? "Could not save partner"), { status: res.status });
         const status = res ? await res.json() : { reciprocal: true };
         partnerReciprocal = status.reciprocal;
         partnerSessionId = status.session_id ?? null;
@@ -351,7 +352,7 @@
       } catch(e) {
         if (btn) { btn.disabled = false; btn.textContent = "Get Started"; }
         console.error(e);
-        hubAlert("Couldn’t save your partner — try again.");
+        hubAlert(failureLine(e, { action: "save your partner", thing: "partner" }));
       }
     };
 
@@ -422,7 +423,7 @@
         }
       } catch (e) {
         console.error(e);
-        hubAlert("Couldn’t update your signal — try again.");
+        hubAlert(pairedFailureLine(e, { action: "update your signal", thing: "signal" }));
       } finally {
         btn.disabled = false;
       }
